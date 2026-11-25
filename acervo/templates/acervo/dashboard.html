@@ -11,22 +11,58 @@
     </div>
     {% if pode_exportar %}
         <div class="botoes-exportacao">
-            <a class="botao-exportar" href="{% url 'exportar_csv' %}?inicio={{ request.GET.inicio|default:''|urlencode }}&fim={{ request.GET.fim|default:''|urlencode }}">
+            <a class="botao-exportar" href="{% url 'exportar_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
                 Exportar CSV
             </a>
-            <a class="botao-exportar botao-exportar-pdf" href="{% url 'exportar_pdf' %}?inicio={{ request.GET.inicio|default:''|urlencode }}&fim={{ request.GET.fim|default:''|urlencode }}">
+            <a class="botao-exportar botao-exportar-pdf" href="{% url 'exportar_pdf' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
                 Exportar PDF
             </a>
         </div>
     {% endif %}
 </div>
 
-<form method="get" class="busca filtro-periodo">
-    <label for="{{ form_periodo.inicio.id_for_label }}">Início:</label>
-    {{ form_periodo.inicio }}
+<div class="atalhos-periodo">
+    <a class="atalho-pill {% if request.GET.atalho == 'semana' %}is-active{% endif %}"
+       href="?atalho=semana&agrupamento=semana">
+        Últimos 7 dias (Semana)
+    </a>
+    <a class="atalho-pill {% if request.GET.atalho == 'mes' %}is-active{% endif %}"
+       href="?atalho=mes&agrupamento=mes">
+        Mês atual
+    </a>
+    <a class="atalho-pill {% if not request.GET.atalho and not request.GET.mes and not request.GET.semana and not request.GET.inicio and not request.GET.fim %}is-active{% endif %}"
+       href="{% url 'dashboard' %}">
+        Todo o período
+    </a>
+</div>
 
-    <label for="{{ form_periodo.fim.id_for_label }}">Fim:</label>
-    {{ form_periodo.fim }}
+<form method="get" class="busca filtro-periodo">
+    <div class="filtro-grupo">
+        <label for="{{ form_periodo.mes.id_for_label }}">Mês:</label>
+        {{ form_periodo.mes }}
+    </div>
+
+    <div class="filtro-grupo">
+        <label for="{{ form_periodo.semana.id_for_label }}">Semana:</label>
+        {{ form_periodo.semana }}
+    </div>
+
+    <div class="filtro-grupo">
+        <label for="{{ form_periodo.inicio.id_for_label }}">Início:</label>
+        {{ form_periodo.inicio }}
+    </div>
+
+    <div class="filtro-grupo">
+        <label for="{{ form_periodo.fim.id_for_label }}">Fim:</label>
+        {{ form_periodo.fim }}
+    </div>
+
+    {% if mostra_series %}
+        <div class="filtro-grupo">
+            <label for="{{ form_periodo.agrupamento.id_for_label }}">Gráfico:</label>
+            {{ form_periodo.agrupamento }}
+        </div>
+    {% endif %}
 
     <button type="submit">Filtrar</button>
     <a class="link-limpar" href="{% url 'dashboard' %}">Limpar</a>
@@ -62,7 +98,7 @@
 <div class="charts-grid">
     {% if mostra_series %}
         <section class="chart-card chart-card-largo">
-            <h2>Empréstimos por mês (Série Temporal)</h2>
+            <h2>{{ titulo_serie }} (Série Temporal)</h2>
             {% if por_mes %}
                 <div class="chart-wrapper">
                     <canvas id="grafico-mes"></canvas>

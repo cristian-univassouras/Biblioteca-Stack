@@ -124,10 +124,16 @@ class DashboardApi(APIView):
 
     def get(self, request):
         org = org_atual(request)
-        base, _ = base_emprestimos_filtrada(request, org)
+        base, periodo_form = base_emprestimos_filtrada(request, org)
+        agrupamento = (
+            periodo_form.cleaned_data.get('agrupamento') or 'mes'
+            if periodo_form.is_valid()
+            else 'mes'
+        )
         metricas = calcular_metricas_dashboard(
             base,
             org,
             incluir_series=request.user.perfil.eh_admin,
+            agrupamento=agrupamento,
         )
         return Response(metricas)

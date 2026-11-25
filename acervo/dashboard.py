@@ -4,7 +4,7 @@ from datetime import date, datetime
 from xml.sax.saxutils import escape
 
 from django.db.models import Count, Q
-from django.db.models.functions import TruncMonth
+from django.db.models.functions import TruncMonth, TruncWeek
 from django.http import HttpResponse
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
@@ -12,7 +12,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from .forms import filtrar_periodo
+from .forms import filtrar_periodo, resolver_intervalo_periodo
 from .models import Emprestimo, Exemplar, Livro, Reserva
 
 CATEGORIA_MAP = dict(Livro.CATEGORIA_CHOICES)
@@ -25,9 +25,10 @@ def base_emprestimos_filtrada(request, org):
     return filtrar_periodo(request, qs)
 
 
-def calcular_metricas_dashboard(base, org, incluir_series=True):
+def calcular_metricas_dashboard(base, org, incluir_series=True, agrupamento='mes'):
     """Calcula todas as métricas do dashboard via ORM sem N+1."""
     hoje = date.today()
+    agrupamento = 'semana' if agrupamento == 'semana' else 'mes'
 
     kpis = base.aggregate(
         total=Count('id'),
@@ -90,22 +91,32 @@ def calcular_metricas_dashboard(base, org, incluir_series=True):
 
     por_mes = []
     if incluir_series:
+        trunc_fn = TruncWeek('data_emprestimo') if agrupamento == 'semana' else TruncMonth('data_emprestimo')
         por_mes_qs = (
-            base.annotate(mes=TruncMonth('data_emprestimo'))
-            .values('mes')
+            base.annotate(periodo=trunc_fn)
+            .values('periodo')
             .annotate(total=Count('id'))
-            .order_by('mes')
+            .order_by('periodo')
         )
         por_mes = [
-            {'mes': r['mes'].strftime('%m/%Y'), 'total': r['total']}
+            {
+                'mes': (
+                    f"Sem {r['periodo'].strftime('%V')} ({r['periodo'].strftime('%d/%m')})"
+                    if agrupamento == 'semana'
+                    else r['periodo'].strftime('%m/%Y')
+                ),
+                'total': r['total'],
+            }
             for r in por_mes_qs
-            if r['mes'] is not None
+            if r['periodo'] is not None
         ]
 
     return {
         'kpis': kpis,
         'ranking': ranking,
         'por_mes': por_mes,
+        'agrupamento': agrupamento,
+        'titulo_serie': 'Empréstimos por semana' if agrupamento == 'semana' else 'Empréstimos por mês',
         'por_categoria': por_categoria,
         'exemplares_por_estado': exemplares_por_estado,
     }
@@ -181,14 +192,8 @@ def gerar_resposta_pdf(base, org, form, usuario):
 
     elementos.append(Paragraph(f'Relatório de Empréstimos — {escape(org.nome)}', styles['Title']))
 
-    inicio = form.cleaned_data.get('inicio') if form.is_valid() else None
-    fim = form.cleaned_data.get('fim') if form.is_valid() else None
-    if inicio or fim:
-        inicio_txt = inicio.strftime('%d/%m/%Y') if inicio else 'Início'
-        fim_txt = fim.strftime('%d/%m/%Y') if fim else 'Hoje'
-        periodo_txt = f'Período: {inicio_txt} até {fim_txt}'
-    else:
-        periodo_txt = 'Período: Todos os registros'
+    _, _, periodo_desc = resolver_intervalo_periodo(form)
+    periodo_txt = f'Período: {periodo_desc}'
 
     meta_txt = (
         f'{periodo_txt} | Emitido por: {escape(usuario.username)} | '

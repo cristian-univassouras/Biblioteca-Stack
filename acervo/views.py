@@ -107,7 +107,17 @@ def dashboard(request):
     org = org_atual(request)
     base, periodo_form = base_emprestimos_filtrada(request, org)
     eh_admin = request.user.perfil.eh_admin
-    metricas = calcular_metricas_dashboard(base, org, incluir_series=eh_admin)
+    agrupamento = (
+        periodo_form.cleaned_data.get('agrupamento') or 'mes'
+        if periodo_form.is_valid()
+        else 'mes'
+    )
+    metricas = calcular_metricas_dashboard(
+        base,
+        org,
+        incluir_series=eh_admin,
+        agrupamento=agrupamento,
+    )
 
     contexto = {
         'organizacao': org,
@@ -117,6 +127,8 @@ def dashboard(request):
         'kpis': metricas['kpis'],
         'ranking': metricas['ranking'],
         'por_mes': metricas['por_mes'],
+        'agrupamento': metricas['agrupamento'],
+        'titulo_serie': metricas['titulo_serie'],
         'por_categoria': metricas['por_categoria'],
         'exemplares_por_estado': metricas['exemplares_por_estado'],
     }

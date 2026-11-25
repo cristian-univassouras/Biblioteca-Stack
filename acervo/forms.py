@@ -1,4 +1,6 @@
-from datetime import date
+import calendar
+import re
+from datetime import date, datetime, timedelta
 
 from django import forms
 
@@ -138,6 +140,27 @@ class ReservaForm(forms.ModelForm):
 
 
 class PeriodoForm(forms.Form):
+    ATALHO_CHOICES = [
+        ('', 'Personalizado'),
+        ('semana', 'Últimos 7 dias'),
+        ('mes', 'Mês atual'),
+    ]
+    AGRUPAMENTO_CHOICES = [
+        ('mes', 'Por mês'),
+        ('semana', 'Por semana'),
+    ]
+
+    atalho = forms.ChoiceField(required=False, choices=ATALHO_CHOICES, label='Atalho')
+    mes = forms.CharField(
+        required=False,
+        label='Mês',
+        widget=forms.TextInput(attrs={'type': 'month'}),
+    )
+    semana = forms.CharField(
+        required=False,
+        label='Semana',
+        widget=forms.TextInput(attrs={'type': 'week'}),
+    )
     inicio = forms.DateField(
         required=False,
         label='Início',
@@ -148,14 +171,81 @@ class PeriodoForm(forms.Form):
         label='Fim',
         widget=forms.DateInput(attrs={'type': 'date'}),
     )
+    agrupamento = forms.ChoiceField(
+        required=False,
+        choices=AGRUPAMENTO_CHOICES,
+        initial='mes',
+        label='Série temporal',
+    )
+
+    def clean_mes(self):
+        valor = (self.cleaned_data.get('mes') or '').strip()
+        if not valor:
+            return ''
+        try:
+            datetime.strptime(valor, '%Y-%m')
+        except ValueError as exc:
+            raise forms.ValidationError('Informe um mês válido (AAAA-MM).') from exc
+        return valor
+
+    def clean_semana(self):
+        valor = (self.cleaned_data.get('semana') or '').strip()
+        if not valor:
+            return ''
+        match = re.fullmatch(r'(\d{4})-W(\d{2})', valor)
+        if not match:
+            raise forms.ValidationError('Informe uma semana válida (AAAA-Wss).')
+        ano, sem = int(match.group(1)), int(match.group(2))
+        try:
+            date.fromisocalendar(ano, sem, 1)
+        except ValueError as exc:
+            raise forms.ValidationError('Semana ISO inválida.') from exc
+        return valor
+
+
+def resolver_intervalo_periodo(form):
+    """Converte os filtros validados (datas, mês, semana ou atalho) em (inicio, fim, rótulo)."""
+    if not form.is_valid():
+        return None, None, 'Todos os registros'
+
+    data = form.cleaned_data
+    inicio = data.get('inicio')
+    fim = data.get('fim')
+    if inicio or fim:
+        inicio_txt = inicio.strftime('%d/%m/%Y') if inicio else 'Início'
+        fim_txt = fim.strftime('%d/%m/%Y') if fim else 'Hoje'
+        return inicio, fim, f'{inicio_txt} até {fim_txt}'
+
+    mes_str = data.get('mes')
+    if mes_str:
+        dt = datetime.strptime(mes_str, '%Y-%m')
+        ultimo_dia = calendar.monthrange(dt.year, dt.month)[1]
+        return date(dt.year, dt.month, 1), date(dt.year, dt.month, ultimo_dia), f'Mês {dt.strftime("%m/%Y")}'
+
+    semana_str = data.get('semana')
+    if semana_str:
+        match = re.fullmatch(r'(\d{4})-W(\d{2})', semana_str)
+        ano, sem = int(match.group(1)), int(match.group(2))
+        segunda = date.fromisocalendar(ano, sem, 1)
+        domingo = segunda + timedelta(days=6)
+        return segunda, domingo, f'Semana {sem:02d}/{ano} ({segunda.strftime("%d/%m")} a {domingo.strftime("%d/%m")})'
+
+    hoje = date.today()
+    atalho = data.get('atalho')
+    if atalho == 'semana':
+        return hoje - timedelta(days=6), hoje, 'Últimos 7 dias'
+    if atalho == 'mes':
+        return date(hoje.year, hoje.month, 1), hoje, f'Mês atual ({hoje.strftime("%m/%Y")})'
+
+    return None, None, 'Todos os registros'
 
 
 def filtrar_periodo(request, qs, campo='data_emprestimo'):
     """Filtra um queryset de forma segura usando PeriodoForm validado."""
     form = PeriodoForm(request.GET)
-    if form.is_valid():
-        if form.cleaned_data.get('inicio'):
-            qs = qs.filter(**{f'{campo}__gte': form.cleaned_data['inicio']})
-        if form.cleaned_data.get('fim'):
-            qs = qs.filter(**{f'{campo}__lte': form.cleaned_data['fim']})
+    inicio, fim, _ = resolver_intervalo_periodo(form)
+    if inicio:
+        qs = qs.filter(**{f'{campo}__gte': inicio})
+    if fim:
+        qs = qs.filter(**{f'{campo}__lte': fim})
     return qs, form

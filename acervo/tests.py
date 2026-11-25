@@ -309,6 +309,35 @@ class DashboardERelatoriosTest(BaseMultiTenantMixin, TestCase):
         self.assertEqual(r_futuro.status_code, 200)
         self.assertEqual(r_futuro.context['kpis']['total'], 0)
 
+    def test_filtro_por_mes_semana_e_agrupamento(self):
+        self.client.force_login(self.admin_a)
+        hoje = date.today()
+        mes_atual = hoje.strftime('%Y-%m')
+        iso_year, iso_week, _ = hoje.isocalendar()
+        semana_atual = f'{iso_year}-W{iso_week:02d}'
+
+        r_mes = self.client.get(reverse('dashboard'), {'mes': mes_atual})
+        self.assertEqual(r_mes.status_code, 200)
+        self.assertEqual(r_mes.context['kpis']['total'], 3)
+
+        r_sem = self.client.get(
+            reverse('dashboard'),
+            {'semana': semana_atual, 'agrupamento': 'semana'},
+        )
+        self.assertEqual(r_sem.status_code, 200)
+        self.assertEqual(r_sem.context['kpis']['total'], 3)
+        self.assertEqual(r_sem.context['agrupamento'], 'semana')
+        self.assertTrue(r_sem.context['por_mes'][0]['mes'].startswith('Sem '))
+
+        r_atalho = self.client.get(reverse('dashboard'), {'atalho': 'semana'})
+        self.assertEqual(r_atalho.status_code, 200)
+        self.assertEqual(r_atalho.context['kpis']['total'], 3)
+
+        # Parâmetros malformados não causam erro 500
+        r_errado = self.client.get(reverse('dashboard'), {'mes': 'abc', 'semana': '9999-W99'})
+        self.assertEqual(r_errado.status_code, 200)
+        self.assertEqual(r_errado.context['kpis']['total'], 3)
+
     def test_dashboard_vazio_sem_erro(self):
         org_vazia = Organizacao.objects.create(nome='Org Vazia')
         user_vazio = User.objects.create_user('vazio', 'v@v.com', 'senha1234')
