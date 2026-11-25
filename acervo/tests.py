@@ -180,8 +180,8 @@ class PerfisEPermissoesTest(BaseMultiTenantMixin, TestCase):
         super_sem_perfil = User.objects.create_superuser('root', 'root@sys.com', 'senha1234')
         self.client.force_login(super_sem_perfil)
         resp = self.client.get(reverse('dashboard'))
-        self.assertEqual(resp.status_code, 302)
-        self.assertIn('/admin/', resp.url)
+        self.assertEqual(resp.status_code, 403)
+        self.assertContains(resp, '/admin/', status_code=403)
 
         comum_sem_perfil = User.objects.create_user('semperfil', 'sp@sys.com', 'senha1234')
         self.client.force_login(comum_sem_perfil)

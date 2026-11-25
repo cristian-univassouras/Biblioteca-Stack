@@ -1,9 +1,8 @@
 from functools import wraps
 
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 from .models import Perfil
@@ -31,13 +30,6 @@ def perfil_requerido(view_func):
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
         if obter_perfil(request.user) is None:
-            messages.warning(
-                request,
-                'Sua conta não possui um perfil vinculado a uma organização. '
-                'Vincule um perfil no painel administrativo para acessar esta área.',
-            )
-            if request.user.is_staff:
-                return redirect('admin:index')
             return render(request, 'acervo/sem_perfil.html', status=403)
         return view_func(request, *args, **kwargs)
 

@@ -22,12 +22,18 @@
             </a>
             <div class="k50-nav__actions">
                 <a class="k50-nav__link" href="#roda-acervo">Explorar</a>
-                {% if not user.is_authenticated %}
+                {% if user.is_authenticated and user.perfil %}
+                    <a class="k50-btn k50-btn--sm" href="{% url 'dashboard' %}">Dashboard</a>
+                {% elif user.is_authenticated and user.is_staff %}
+                    <form method="post" action="{% url 'logout' %}" style="display:inline;margin:0;padding:0;background:none;border:none;box-shadow:none;">
+                        {% csrf_token %}
+                        <button type="submit" class="k50-nav__link" style="background:none;border:none;cursor:pointer;font-family:inherit;">Sair ({{ user.username }})</button>
+                    </form>
+                    <a class="k50-btn k50-btn--sm" href="{% url 'admin:index' %}">Painel Admin</a>
+                {% else %}
                     <a class="k50-nav__link" href="{% url 'cadastro' %}">Cadastrar biblioteca</a>
+                    <a class="k50-btn k50-btn--sm" href="{% url 'login' %}">Entrar</a>
                 {% endif %}
-                <a class="k50-btn k50-btn--sm" href="{% url 'dashboard' %}">
-                    {% if user.is_authenticated %}Dashboard{% else %}Entrar{% endif %}
-                </a>
             </div>
         </div>
     </header>
@@ -59,8 +65,10 @@
                         </p>
                         <div class="k50-hero__buttons">
                             <a class="k50-btn" href="#roda-acervo">Explorar o acervo</a>
-                            {% if user.is_authenticated %}
+                            {% if user.is_authenticated and user.perfil %}
                                 <a class="k50-btn k50-btn--ghost" href="{% url 'dashboard' %}">Ir ao painel</a>
+                            {% elif user.is_authenticated and user.is_staff %}
+                                <a class="k50-btn k50-btn--ghost" href="{% url 'admin:index' %}">Painel Superadmin</a>
                             {% else %}
                                 <a class="k50-btn k50-btn--ghost" href="{% url 'cadastro' %}">Criar organização</a>
                             {% endif %}
@@ -201,8 +209,8 @@
                         Cadastre novos títulos, controle exemplares físicos e digitais, acompanhe métricas
                         no dashboard e integre via API REST.
                     </p>
-                    <a class="k50-btn" href="{% url 'dashboard' %}">
-                        {% if user.is_authenticated %}Abrir meu Dashboard{% else %}Entrar na plataforma{% endif %}
+                    <a class="k50-btn" href="{% if user.is_authenticated and user.perfil %}{% url 'dashboard' %}{% elif user.is_authenticated and user.is_staff %}{% url 'admin:index' %}{% else %}{% url 'login' %}{% endif %}">
+                        {% if user.is_authenticated and user.perfil %}Abrir meu Dashboard{% elif user.is_authenticated and user.is_staff %}Abrir Painel Superadmin{% else %}Entrar na plataforma{% endif %}
                     </a>
                 </div>
 
