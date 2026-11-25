@@ -2,7 +2,10 @@
 
 {% block conteudo %}
 
-<h1>Empréstimos</h1>
+<div class="pagina-cabecalho">
+    <h1>Empréstimos</h1>
+    <a class="botao-novo" href="{% url 'novo_emprestimo' %}">+ Novo empréstimo</a>
+</div>
 
 <form method="get" class="busca">
     <input type="text" name="nome" placeholder="Buscar por título ou membro" value="{{ filtro_nome }}">
@@ -15,8 +18,6 @@
 
     <button type="submit">Buscar</button>
 </form>
-
-<a class="botao-novo" href="{% url 'novo_emprestimo' %}">+ Novo empréstimo</a>
 
 <ul>
     {% for emprestimo in emprestimos %}

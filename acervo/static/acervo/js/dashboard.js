@@ -15,12 +15,13 @@
         }
     }
 
-    const corPrimaria = '#2c3e50';
-    const corPrimariaSuave = 'rgba(44, 62, 80, 0.15)';
-    const corSecundaria = '#34495e';
-    const corDestaque = '#16a085';
+    const corPrimaria = '#0b291a';
+    const corLimaSuave = 'rgba(204, 248, 142, 0.45)';
+    const corFloresta = '#1b3d2b';
+    const corBotao = '#274a33';
+    const corDestaque = '#2f8f5b';
 
-    // 1. Série Temporal: Gráfico de Linha (recomendado para evolução no tempo)
+    // 1. Série Temporal: Gráfico de Linha
     const dadosMes = lerDados('dados-mes');
     const canvasMes = document.getElementById('grafico-mes');
     if (canvasMes && dadosMes.length > 0) {
@@ -32,10 +33,13 @@
                     label: 'Empréstimos',
                     data: dadosMes.map((item) => item.total),
                     borderColor: corPrimaria,
-                    backgroundColor: corPrimariaSuave,
+                    backgroundColor: corLimaSuave,
+                    pointBackgroundColor: '#ccf88e',
+                    pointBorderColor: corPrimaria,
+                    pointBorderWidth: 2,
                     fill: true,
-                    tension: 0.25,
-                    pointRadius: 4,
+                    tension: 0.28,
+                    pointRadius: 5,
                 }],
             },
             options: {
@@ -49,7 +53,7 @@
         });
     }
 
-    // 2. Ranking: Barras Horizontais (recomendado para rankings e títulos longos)
+    // 2. Ranking: Barras Horizontais
     const dadosRanking = lerDados('dados-ranking');
     const canvasRanking = document.getElementById('grafico-ranking');
     if (canvasRanking && dadosRanking.length > 0) {
@@ -60,8 +64,8 @@
                 datasets: [{
                     label: 'Empréstimos',
                     data: dadosRanking.map((item) => item.total),
-                    backgroundColor: corPrimaria,
-                    borderRadius: 4,
+                    backgroundColor: corFloresta,
+                    borderRadius: 6,
                 }],
             },
             options: {
@@ -87,8 +91,8 @@
                 datasets: [{
                     label: 'Empréstimos',
                     data: dadosCategoria.map((item) => item.total),
-                    backgroundColor: corSecundaria,
-                    borderRadius: 4,
+                    backgroundColor: corBotao,
+                    borderRadius: 6,
                 }],
             },
             options: {
@@ -114,7 +118,7 @@
                     label: 'Exemplares',
                     data: dadosEstados.map((item) => item.total),
                     backgroundColor: corDestaque,
-                    borderRadius: 4,
+                    borderRadius: 6,
                 }],
             },
             options: {

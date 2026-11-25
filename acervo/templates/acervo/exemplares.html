@@ -2,7 +2,10 @@
 
 {% block conteudo %}
 
-<h1>Exemplares</h1>
+<div class="pagina-cabecalho">
+    <h1>Exemplares</h1>
+    <a class="botao-novo" href="{% url 'novo_exemplar' %}">+ Novo exemplar</a>
+</div>
 
 <form method="get" class="busca">
     <input type="text" name="nome" placeholder="Buscar por título ou código de patrimônio" value="{{ filtro_nome }}">
@@ -16,8 +19,6 @@
 
     <button type="submit">Buscar</button>
 </form>
-
-<a class="botao-novo" href="{% url 'novo_exemplar' %}">+ Novo exemplar</a>
 
 <ul>
     {% for exemplar in exemplares %}

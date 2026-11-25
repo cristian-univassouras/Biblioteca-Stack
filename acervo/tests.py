@@ -172,7 +172,8 @@ class PerfisEPermissoesTest(BaseMultiTenantMixin, TestCase):
     def test_landing_page_publica_carrega_com_capas_e_vitrine(self):
         resp = self.client.get(reverse('home'))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, 'SUA VEZ')
+        self.assertContains(resp, 'BIBLIOTECA')
+        self.assertContains(resp, 'STACK')
         self.assertContains(resp, 'cover-01.svg')
         self.assertContains(resp, 'Dom Casmurro')
 

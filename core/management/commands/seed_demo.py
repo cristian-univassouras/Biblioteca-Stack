@@ -26,7 +26,7 @@ class Command(BaseCommand):
         # Superusuário (dono do sistema / painel /admin/) NÃO tem Perfil vinculado a cliente
         super_user, created = User.objects.get_or_create(
             username='superadmin',
-            defaults={'email': 'superadmin@suavezdeler.local', 'is_staff': True, 'is_superuser': True},
+            defaults={'email': 'superadmin@bibliotecastack.local', 'is_staff': True, 'is_superuser': True},
         )
         if created or not super_user.is_superuser:
             super_user.is_staff = True

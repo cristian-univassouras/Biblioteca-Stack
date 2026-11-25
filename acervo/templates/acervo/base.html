@@ -4,35 +4,50 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sua Vez de Ler — Biblioteca SaaS{% endblock %}</title>
+    <title>{% block title %}Biblioteca Stack — Acervo SaaS{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@1,6..72,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'acervo/style.css' %}">
 </head>
 <body>
     <div class="layout">
         <aside class="sidebar">
-            <div class="sidebar-titulo">Biblioteca SaaS</div>
+            <a class="sidebar-brand" href="{% url 'home' %}">
+                <span class="sidebar-brand__mark">BS</span>
+                <div>
+                    <div class="sidebar-titulo">Biblioteca Stack</div>
+                    <small class="sidebar-subtitulo">Acervo SaaS</small>
+                </div>
+            </a>
+
             {% if user.is_authenticated and user.perfil %}
                 <div class="sidebar-org">
+                    <span class="sidebar-org__label">Organização</span>
                     <strong>{{ user.perfil.organizacao.nome }}</strong>
-                    <span>{{ user.username }} · {{ user.perfil.get_papel_display }}</span>
+                    <span class="sidebar-org__user">{{ user.username }} · {{ user.perfil.get_papel_display }}</span>
                 </div>
             {% endif %}
+
+            {% with rota=request.resolver_match.url_name %}
             <nav>
-                <a href="{% url 'dashboard' %}">Dashboard</a>
-                <a href="{% url 'lista' %}">Livros</a>
-                <a href="{% url 'lista_autores' %}">Autores</a>
-                <a href="{% url 'lista_exemplares' %}">Exemplares</a>
-                <a href="{% url 'lista_membros' %}">Membros</a>
-                <a href="{% url 'lista_emprestimos' %}">Empréstimos</a>
-                <a href="{% url 'lista_reservas' %}">Reservas</a>
-                {% if user.is_authenticated and user.perfil.eh_admin %}
-                    <a href="{% url 'lista_equipe' %}">Equipe</a>
+                <a href="{% url 'dashboard' %}" class="{% if rota == 'dashboard' %}is-active{% endif %}">Dashboard</a>
+                <a href="{% url 'lista' %}" class="{% if rota == 'lista' or rota == 'novo_livro' or rota == 'editar_livro' or rota == 'apagar_livro' %}is-active{% endif %}">Livros</a>
+                <a href="{% url 'lista_autores' %}" class="{% if rota == 'lista_autores' or rota == 'novo_autor' or rota == 'editar_autor' or rota == 'apagar_autor' %}is-active{% endif %}">Autores</a>
+                <a href="{% url 'lista_exemplares' %}" class="{% if rota == 'lista_exemplares' or rota == 'novo_exemplar' or rota == 'editar_exemplar' or rota == 'apagar_exemplar' %}is-active{% endif %}">Exemplares</a>
+                <a href="{% url 'lista_membros' %}" class="{% if rota == 'lista_membros' or rota == 'novo_membro' or rota == 'editar_membro' or rota == 'apagar_membro' %}is-active{% endif %}">Membros</a>
+                <a href="{% url 'lista_emprestimos' %}" class="{% if rota == 'lista_emprestimos' or rota == 'novo_emprestimo' %}is-active{% endif %}">Empréstimos</a>
+                <a href="{% url 'lista_reservas' %}" class="{% if rota == 'lista_reservas' or rota == 'nova_reserva' or rota == 'cancelar_reserva' %}is-active{% endif %}">Reservas</a>
+                {% if user.is_authenticated and user.perfil and user.perfil.eh_admin %}
+                    <a href="{% url 'lista_equipe' %}" class="{% if rota == 'lista_equipe' or rota == 'novo_usuario_equipe' %}is-active{% endif %}">Equipe</a>
                 {% endif %}
             </nav>
+            {% endwith %}
+
             {% if user.is_authenticated %}
                 <form method="post" action="{% url 'logout' %}" class="sidebar-logout">
                     {% csrf_token %}
-                    <button type="submit">Sair</button>
+                    <button type="submit">Sair da conta</button>
                 </form>
             {% endif %}
         </aside>
@@ -49,7 +64,7 @@
                 {% block conteudo %}
                 {% endblock %}
             </main>
-            <footer>Sua Vez de Ler - Todos os direitos reservados © 2026</footer>
+            <footer>Biblioteca Stack — Todos os direitos reservados © 2026</footer>
         </div>
     </div>
     {% block scripts %}{% endblock %}

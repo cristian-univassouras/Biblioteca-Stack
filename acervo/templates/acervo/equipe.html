@@ -4,9 +4,10 @@
 
 {% block conteudo %}
 
-<h1>Equipe — {{ organizacao.nome }}</h1>
-
-<a class="botao-novo" href="{% url 'novo_usuario_equipe' %}">+ Novo membro da equipe</a>
+<div class="pagina-cabecalho">
+    <h1>Equipe — {{ organizacao.nome }}</h1>
+    <a class="botao-novo" href="{% url 'novo_usuario_equipe' %}">+ Novo membro da equipe</a>
+</div>
 
 <ul>
     {% for perfil in membros_equipe %}
