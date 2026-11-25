@@ -244,6 +244,17 @@ class PerfisEPermissoesTest(BaseMultiTenantMixin, TestCase):
         self.assertEqual(criado.perfil.organizacao, self.org_a)
         self.assertEqual(criado.perfil.papel, 'operador')
 
+    def test_logout_redireciona_para_landing_page_em_post_e_get(self):
+        self.client.force_login(self.admin_a)
+        r_post = self.client.post(reverse('logout'))
+        self.assertRedirects(r_post, reverse('home'))
+        self.assertFalse(r_post.wsgi_request.user.is_authenticated)
+
+        self.client.force_login(self.admin_a)
+        r_get = self.client.get(reverse('logout'))
+        self.assertRedirects(r_get, reverse('home'))
+        self.assertFalse(r_get.wsgi_request.user.is_authenticated)
+
     def test_operador_nao_pode_apagar_nem_exportar(self):
         self.client.force_login(self.op_a)
         self.assertEqual(self.client.post(reverse('apagar_livro', args=[self.livro_a.pk])).status_code, 403)

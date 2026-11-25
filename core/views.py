@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -25,6 +25,12 @@ class CustomLoginView(auth_views.LoginView):
         if perfil is None and self.request.user.is_superuser:
             return reverse('admin:index')
         return reverse('dashboard')
+
+
+def logout_view(request):
+    """Encerra a sessão e redireciona sempre para a landing page."""
+    logout(request)
+    return redirect('home')
 
 
 def cadastro_organizacao(request):
