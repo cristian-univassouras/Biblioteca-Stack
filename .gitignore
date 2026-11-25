@@ -6,3 +6,9 @@ env/
 
 __pycache__/
 *.pyc
+staticfiles/
+*.sqlite3-journal
+MELHORIAS_P1.md
+PLANO_EVOLUCAO_P2.md
+CREDENCIAIS.md
+
