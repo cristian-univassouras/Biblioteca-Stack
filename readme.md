@@ -60,9 +60,13 @@ Construída com **Django REST Framework**, exige autenticação (`IsAuthenticate
 
 ---
 
-## Como Iniciar o Projeto
+## Como Iniciar o Projeto (Escolhendo PostgreSQL ou SQLite)
 
-### Opção 1: Com Docker + PostgreSQL (Recomendado)
+O projeto suporta **dois bancos de dados**, controlados pela variável `DB_ENGINE` no arquivo `.env` (ou no `docker-compose.yml`):
+- `DB_ENGINE=postgres`: usa **PostgreSQL 16** (padrão ao subir com Docker).
+- `DB_ENGINE=sqlite`: usa o arquivo local `db.sqlite3`, que **já vem no repositório populado com os mesmos dados do PostgreSQL**.
+
+### Opção 1: Rodar com PostgreSQL via Docker (Recomendado)
 
 Pré-requisitos: **Docker** e **Docker Compose** (Docker Desktop ativo no Windows/macOS).
 
@@ -72,17 +76,18 @@ Pré-requisitos: **Docker** e **Docker Compose** (Docker Desktop ativo no Window
    cd Biblioteca-Stack
    ```
 
-2. *(Opcional)* Crie o arquivo `.env` a partir do exemplo para personalizar chaves/senhas:
+2. *(Opcional)* Crie o `.env` a partir do modelo caso queira customizar `SECRET_KEY` ou credenciais do Postgres:
    ```bash
    cp .env.example .env
    ```
+   *(Mesmo que `DB_ENGINE=sqlite` esteja no `.env`, o `docker-compose.yml` sobrescreve automaticamente para `DB_ENGINE=postgres` e `POSTGRES_HOST=db` no container `web`.)*
 
-3. Suba o banco **PostgreSQL 16** e a aplicação **Django (Gunicorn)**:
+3. Suba o PostgreSQL e a aplicação Django (Gunicorn):
    ```bash
    docker compose up -d --build
    ```
 
-   O entrypoint (`docker-entrypoint.sh`) aguarda o PostgreSQL ficar saudável, aplica automaticamente todas as migrações e executa o comando `seed_demo` para popular dados iniciais e contas de demonstração.
+   O `docker-entrypoint.sh` aguarda o PostgreSQL ficar saudável, aplica todas as migrações e executa o comando `seed_demo` de forma idempotente.
 
 4. Acesse no navegador:
    - **Landing Page:** `http://127.0.0.1:8000/`
@@ -101,7 +106,7 @@ Pré-requisitos: **Docker** e **Docker Compose** (Docker Desktop ativo no Window
 
 ---
 
-### Opção 2: Rodar Localmente sem Docker (SQLite)
+### Opção 2: Rodar Localmente com SQLite (sem Docker)
 
 Pré-requisitos: **Python 3.13** (ou 3.11+).
 
@@ -114,16 +119,18 @@ python -m venv .venv
 # 2. Instalar dependências
 pip install -r requirements.txt
 
-# 3. Configurar variáveis de ambiente (mantém DB_ENGINE=sqlite)
+# 3. Garantir DB_ENGINE=sqlite no .env
 cp .env.example .env
 
-# 4. Aplicar migrações e popular dados de demonstração
+# 4. Aplicar eventuais migrações pendentes (o db.sqlite3 já vem populado)
 python manage.py migrate
-python manage.py seed_demo
 
-# 5. Iniciar o servidor de desenvolvimento
+# 5. Iniciar o servidor local
 python manage.py runserver
 ```
+
+> **Quer rodar localmente apontando direto para um PostgreSQL (sem usar o container `web`)?**
+> Basta alterar no `.env` para `DB_ENGINE=postgres`, ajustar `POSTGRES_HOST=localhost` e informar `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_PORT` do seu servidor Postgres antes de rodar `python manage.py migrate` e `python manage.py seed_demo`.
 
 Acesse `http://127.0.0.1:8000/`.
 
