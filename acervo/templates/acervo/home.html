@@ -22,6 +22,9 @@
             </a>
             <div class="k50-nav__actions">
                 <a class="k50-nav__link" href="#roda-acervo">Explorar</a>
+                {% if not user.is_authenticated %}
+                    <a class="k50-nav__link" href="{% url 'cadastro' %}">Cadastrar biblioteca</a>
+                {% endif %}
                 <a class="k50-btn k50-btn--sm" href="{% url 'dashboard' %}">
                     {% if user.is_authenticated %}Dashboard{% else %}Entrar{% endif %}
                 </a>
@@ -56,9 +59,11 @@
                         </p>
                         <div class="k50-hero__buttons">
                             <a class="k50-btn" href="#roda-acervo">Explorar o acervo</a>
-                            <a class="k50-btn k50-btn--ghost" href="{% url 'dashboard' %}">
-                                {% if user.is_authenticated %}Ir ao painel{% else %}Acessar sistema{% endif %}
-                            </a>
+                            {% if user.is_authenticated %}
+                                <a class="k50-btn k50-btn--ghost" href="{% url 'dashboard' %}">Ir ao painel</a>
+                            {% else %}
+                                <a class="k50-btn k50-btn--ghost" href="{% url 'cadastro' %}">Criar organização</a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

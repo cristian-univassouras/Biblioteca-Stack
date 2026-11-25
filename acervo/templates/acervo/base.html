@@ -25,6 +25,9 @@
                 <a href="{% url 'lista_membros' %}">Membros</a>
                 <a href="{% url 'lista_emprestimos' %}">Empréstimos</a>
                 <a href="{% url 'lista_reservas' %}">Reservas</a>
+                {% if user.is_authenticated and user.perfil.eh_admin %}
+                    <a href="{% url 'lista_equipe' %}">Equipe</a>
+                {% endif %}
             </nav>
             {% if user.is_authenticated %}
                 <form method="post" action="{% url 'logout' %}" class="sidebar-logout">

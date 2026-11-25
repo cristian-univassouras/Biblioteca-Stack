@@ -1,20 +1,19 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
+from core import views as core_views
+
 from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
 
-    path(
-        'login/',
-        auth_views.LoginView.as_view(
-            template_name='acervo/login.html',
-            redirect_authenticated_user=True,
-        ),
-        name='login',
-    ),
+    path('login/', core_views.CustomLoginView.as_view(), name='login'),
+    path('cadastro/', core_views.cadastro_organizacao, name='cadastro'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+
+    path('equipe/', core_views.lista_equipe, name='lista_equipe'),
+    path('equipe/novo/', core_views.novo_usuario_equipe, name='novo_usuario_equipe'),
 
     path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard/exportar/csv/', views.exportar_csv, name='exportar_csv'),

@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Organização — Sua Vez de Ler</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'acervo/auth.css' %}">
+</head>
+<body class="auth-page">
+
+    <aside class="auth-showcase">
+        <a class="auth-brand" href="{% url 'home' %}">
+            <span class="auth-brand__mark">SV</span>
+            <span>Sua Vez de Ler · Acervo SaaS</span>
+        </a>
+
+        <div class="auth-showcase__content">
+            <span class="auth-pill-tag">Novo Tenant em Segundos</span>
+            <h1>Crie o ambiente exclusivo da sua biblioteca.</h1>
+            <p>
+                Ao cadastrar uma organização, você já entra como Administrador com
+                banco isolado, dashboard analítico, exportação CSV/PDF e gestão da sua equipe.
+            </p>
+            <div class="auth-covers-fan" aria-hidden="true">
+                <img src="{% static 'acervo/covers/cover-04.svg' %}" alt="">
+                <img src="{% static 'acervo/covers/cover-11.svg' %}" alt="">
+                <img src="{% static 'acervo/covers/cover-14.svg' %}" alt="">
+            </div>
+        </div>
+
+        <div class="auth-showcase__footer">
+            <span>Já faz parte de uma biblioteca?</span>
+            <a href="{% url 'login' %}">Fazer login →</a>
+        </div>
+    </aside>
+
+    <main class="auth-panel">
+        <div class="auth-card">
+            <div class="auth-tabs">
+                <a class="auth-tab" href="{% url 'login' %}">Entrar</a>
+                <a class="auth-tab is-active" href="{% url 'cadastro' %}">Criar Organização</a>
+            </div>
+
+            <h2>Cadastrar nova biblioteca</h2>
+            <p class="auth-card__lead">
+                Crie sua organização e o usuário administrador inicial.
+            </p>
+
+            {% if form.non_field_errors %}
+                <div class="auth-alert">
+                    {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="auth-field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <ul class="auth-field-error">
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="auth-submit">Criar organização e entrar</button>
+            </form>
+
+            <div class="auth-links">
+                <a href="{% url 'home' %}">← Página inicial</a>
+                <a href="{% url 'login' %}">Já tenho conta</a>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

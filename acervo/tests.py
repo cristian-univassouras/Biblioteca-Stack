@@ -188,6 +188,61 @@ class PerfisEPermissoesTest(BaseMultiTenantMixin, TestCase):
         resp2 = self.client.get(reverse('dashboard'))
         self.assertEqual(resp2.status_code, 403)
 
+    def test_superadmin_login_redireciona_para_admin(self):
+        User.objects.create_superuser('super_teste', 'super@sys.com', 'senha1234')
+        resp = self.client.post(
+            reverse('login'),
+            {'username': 'super_teste', 'password': 'senha1234'},
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp.url.endswith('/admin/'))
+
+    def test_cadastro_cria_nova_organizacao_e_admin_isolado(self):
+        resp = self.client.post(
+            reverse('cadastro'),
+            {
+                'nome_organizacao': 'Biblioteca Nova',
+                'username': 'dono_novo',
+                'email': 'dono@nova.com',
+                'password': 'segredo123',
+                'confirmar_password': 'segredo123',
+            },
+        )
+        self.assertRedirects(resp, reverse('dashboard'))
+        nova_org = Organizacao.objects.get(nome='Biblioteca Nova')
+        novo_user = User.objects.get(username='dono_novo')
+        self.assertEqual(novo_user.perfil.organizacao, nova_org)
+        self.assertEqual(novo_user.perfil.papel, 'admin')
+
+        # Não vê livros de outras organizações
+        lista = self.client.get(reverse('lista'))
+        self.assertNotContains(lista, 'Dom Casmurro')
+
+    def test_equipe_apenas_admin_lista_e_cria_na_mesma_organizacao(self):
+        self.client.force_login(self.op_a)
+        self.assertEqual(self.client.get(reverse('lista_equipe')).status_code, 403)
+        self.assertEqual(self.client.get(reverse('novo_usuario_equipe')).status_code, 403)
+
+        self.client.force_login(self.admin_a)
+        resp_lista = self.client.get(reverse('lista_equipe'))
+        self.assertEqual(resp_lista.status_code, 200)
+        self.assertContains(resp_lista, 'ana_op')
+        self.assertNotContains(resp_lista, 'bruno_admin')
+
+        resp_novo = self.client.post(
+            reverse('novo_usuario_equipe'),
+            {
+                'username': 'novo_op_a',
+                'email': 'novoop@a.com',
+                'papel': 'operador',
+                'password': 'segredo123',
+            },
+        )
+        self.assertRedirects(resp_novo, reverse('lista_equipe'))
+        criado = User.objects.get(username='novo_op_a')
+        self.assertEqual(criado.perfil.organizacao, self.org_a)
+        self.assertEqual(criado.perfil.papel, 'operador')
+
     def test_operador_nao_pode_apagar_nem_exportar(self):
         self.client.force_login(self.op_a)
         self.assertEqual(self.client.post(reverse('apagar_livro', args=[self.livro_a.pk])).status_code, 403)

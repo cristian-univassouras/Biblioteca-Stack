@@ -2,10 +2,13 @@
 
 {% block conteudo %}
 <div class="caixa-confirmacao">
-    <h1>Perfil não configurado</h1>
+    <h1>Conta sem organização vinculada</h1>
     <p>
-        Sua conta ainda não está vinculada a nenhuma organização.
-        Solicite ao administrador do sistema a criação do seu perfil.
+        Esta conta não possui um perfil de biblioteca vinculado.
+        Você pode criar uma nova organização ou voltar à página inicial.
+    </p>
+    <p>
+        <a class="botao-novo" style="margin: 1rem auto;" href="{% url 'cadastro' %}">Criar nova organização</a>
     </p>
     <a class="link-cancelar" href="{% url 'home' %}">Voltar ao início</a>
 </div>

@@ -1,0 +1,25 @@
+{% extends 'acervo/base.html' %}
+
+{% block title %}Equipe — {{ organizacao.nome }}{% endblock %}
+
+{% block conteudo %}
+
+<h1>Equipe — {{ organizacao.nome }}</h1>
+
+<a class="botao-novo" href="{% url 'novo_usuario_equipe' %}">+ Novo membro da equipe</a>
+
+<ul>
+    {% for perfil in membros_equipe %}
+        <li>
+            <div class="card-corpo">
+                <strong>{{ perfil.usuario.username }}</strong>
+                <span>{{ perfil.usuario.email|default:"Sem e-mail" }}</span>
+                <span class="meta">Papel: {{ perfil.get_papel_display }}</span>
+            </div>
+        </li>
+    {% empty %}
+        <li class="vazio">Nenhum usuário vinculado a esta organização.</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

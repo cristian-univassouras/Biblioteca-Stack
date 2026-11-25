@@ -8,32 +8,44 @@ from core.models import Organizacao, Perfil
 
 
 class Command(BaseCommand):
-    help = 'Popula o banco com organizações, usuários, acervo, empréstimos multi-mês e reservas.'
+    help = 'Popula o banco com organizações, usuários separados de superadmin, acervo, empréstimos e reservas.'
 
     def handle(self, *args, **options):
-        org_central, _ = Organizacao.objects.get_or_create(nome='Organização padrão')
+        # Renomeia a organização legada da P1 para um nome claro de demonstração
+        org_legada = Organizacao.objects.filter(nome='Organização padrão').first()
+        org_central = Organizacao.objects.filter(nome='Biblioteca Central').first()
+        if org_legada and not org_central:
+            org_legada.nome = 'Biblioteca Central'
+            org_legada.save(update_fields=['nome'])
+            org_central = org_legada
+        elif not org_central:
+            org_central = Organizacao.objects.create(nome='Biblioteca Central')
+
         org_bairro, _ = Organizacao.objects.get_or_create(nome='Biblioteca do Bairro')
 
-        # Superusuário + usuários por organização e papel
-        admin_root, created = User.objects.get_or_create(
-            username='admin',
-            defaults={'email': 'admin@biblioteca.local', 'is_staff': True, 'is_superuser': True},
+        # Superusuário (dono do sistema / painel /admin/) NÃO tem Perfil vinculado a cliente
+        super_user, created = User.objects.get_or_create(
+            username='superadmin',
+            defaults={'email': 'superadmin@suavezdeler.local', 'is_staff': True, 'is_superuser': True},
         )
-        if created or not admin_root.is_superuser:
-            admin_root.is_staff = True
-            admin_root.is_superuser = True
-            admin_root.set_password('admin1234')
-            admin_root.save()
-        Perfil.objects.get_or_create(
-            usuario=admin_root,
-            defaults={'organizacao': org_central, 'papel': 'admin'},
-        )
+        if created or not super_user.is_superuser:
+            super_user.is_staff = True
+            super_user.is_superuser = True
+            super_user.set_password('super1234')
+            super_user.save()
+        Perfil.objects.filter(usuario=super_user).delete()
 
+        # Caso exista o antigo usuário 'admin' da demo anterior, garante separação sem perfil de cliente
+        antigo_admin = User.objects.filter(username='admin', is_superuser=True).first()
+        if antigo_admin:
+            Perfil.objects.filter(usuario=antigo_admin).delete()
+
+        # Usuários de cada organização (clientes do SaaS)
         usuarios = [
-            ('admin_central', 'admin_central@biblioteca.local', 'admin1234', org_central, 'admin'),
-            ('operador_central', 'operador_central@biblioteca.local', 'oper1234', org_central, 'operador'),
-            ('admin_bairro', 'admin_bairro@biblioteca.local', 'admin1234', org_bairro, 'admin'),
-            ('operador_bairro', 'operador_bairro@biblioteca.local', 'oper1234', org_bairro, 'operador'),
+            ('ana', 'ana@central.local', 'admin1234', org_central, 'admin'),
+            ('lucas', 'lucas@central.local', 'oper1234', org_central, 'operador'),
+            ('bruno', 'bruno@bairro.local', 'admin1234', org_bairro, 'admin'),
+            ('mariana', 'mariana@bairro.local', 'oper1234', org_bairro, 'operador'),
         ]
 
         for username, email, senha, org, papel in usuarios:
@@ -150,9 +162,9 @@ class Command(BaseCommand):
                 (7, 1, 55, 40),
                 (10, 2, 35, 21),
                 (0, 3, 30, 16),
-                (1, 4, 25, None),  # Em aberto e em atraso
-                (3, 5, 10, None),  # Em aberto no prazo
-                (8, 6, 5, None),   # Em aberto no prazo
+                (1, 4, 25, None),
+                (3, 5, 10, None),
+                (8, 6, 5, None),
             ]
             for ex_idx, mem_idx, dias_atras, devolvido_dias_atras in plano_emprestimos:
                 dt_emp = hoje - timedelta(days=dias_atras)
@@ -245,8 +257,8 @@ class Command(BaseCommand):
                 (5, 4, 60, 47),
                 (4, 0, 35, 22),
                 (2, 1, 30, 17),
-                (1, 2, 20, None),  # Em aberto e em atraso
-                (5, 3, 8, None),   # Em aberto no prazo
+                (1, 2, 20, None),
+                (5, 3, 8, None),
             ]
             for ex_idx, mem_idx, dias_atras, devolvido_dias_atras in plano:
                 dt_emp = hoje - timedelta(days=dias_atras)

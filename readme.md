@@ -28,11 +28,13 @@ Acesse `http://127.0.0.1:8000/`. O entrypoint executa automaticamente as migraç
 
 | Usuário | Senha | Organização | Papel |
 |---|---|---|---|
-| `admin_central` | `admin1234` | Organização padrão | Administrador |
-| `operador_central` | `oper1234` | Organização padrão | Operador |
-| `admin_bairro` | `admin1234` | Biblioteca do Bairro | Administrador |
-| `operador_bairro` | `oper1234` | Biblioteca do Bairro | Operador |
-| `admin` | `admin1234` | Organização padrão | Superusuário (`/admin/`) + Administrador |
+| `ana` | `admin1234` | Biblioteca Central | Administrador |
+| `lucas` | `oper1234` | Biblioteca Central | Operador |
+| `bruno` | `admin1234` | Biblioteca do Bairro | Administrador |
+| `mariana` | `oper1234` | Biblioteca do Bairro | Operador |
+| `superadmin` | `super1234` | *(Dono do SaaS — `/admin/`)* | Superusuário |
+
+Novas bibliotecas podem ser criadas diretamente em `http://127.0.0.1:8000/cadastro/` (cria organização + administrador inicial) e administradores gerenciam sua equipe em `/equipe/`.
 
 ## Como rodar localmente (sem Docker)
 
