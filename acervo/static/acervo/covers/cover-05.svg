@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 320" width="240" height="320">
+  <defs>
+    <linearGradient id="spine5" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.36"/>
+      <stop offset="8%" stop-color="#000000" stop-opacity="0.06"/>
+      <stop offset="14%" stop-color="#FFFFFF" stop-opacity="0.14"/>
+      <stop offset="20%" stop-color="#000000" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="320" rx="10" fill="#0C4A6E"/>
+  <rect width="240" height="320" rx="10" fill="url(#spine5)"/>
+  <rect x="18" y="16" width="204" height="288" rx="6" fill="none" stroke="#7DD3FC" stroke-opacity="0.35" stroke-width="1.2"/>
+  <text x="128" y="34" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="1.5" fill="#7DD3FC">800 · LITERATURA</text>
+  <text x="128" y="52" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="20" fill="#F0F9FF">Capitães da</text>
+<text x="128" y="76" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="20" fill="#F0F9FF">Areia</text>
+  
+        <path d="M24 170 Q72 140 120 170 T216 170" fill="none" stroke="#7DD3FC" stroke-width="4"/>
+        <path d="M24 192 Q72 162 120 192 T216 192" fill="none" stroke="#7DD3FC" stroke-width="3" opacity="0.7"/>
+        <path d="M24 214 Q72 184 120 214 T216 214" fill="none" stroke="#F0F9FF" stroke-width="2" opacity="0.5"/>
+  <line x1="56" y1="258" x2="196" y2="258" stroke="#7DD3FC" stroke-opacity="0.45" stroke-width="1"/>
+  <text x="128" y="278" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="600" fill="#F0F9FF" opacity="0.9">Jorge Amado</text>
+  <text x="128" y="295" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" letter-spacing="1.8" fill="#7DD3FC" opacity="0.8">SUA VEZ DE LER</text>
+</svg>

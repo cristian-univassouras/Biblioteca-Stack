@@ -39,8 +39,67 @@ FUNCIONALIDADES = [
 ]
 
 
+LIVROS_VITRINE = [
+    {'numero': '01', 'titulo': 'Dom Casmurro', 'autor': 'Machado de Assis', 'ano': 1899,
+     'categoria': '800 – Literatura', 'capa': 'acervo/covers/cover-01.svg',
+     'resumo': 'Ciúme, memória e ironia na obra-prima de Machado de Assis.'},
+    {'numero': '02', 'titulo': 'Vidas Secas', 'autor': 'Graciliano Ramos', 'ano': 1938,
+     'categoria': '800 – Literatura', 'capa': 'acervo/covers/cover-02.svg',
+     'resumo': 'A travessia de Fabiano e sua família pelo sertão nordestino.'},
+    {'numero': '03', 'titulo': 'A Hora da Estrela', 'autor': 'Clarice Lispector', 'ano': 1977,
+     'categoria': '800 – Literatura', 'capa': 'acervo/covers/cover-03.svg',
+     'resumo': 'O retrato delicado e cortante de Macabéa no Rio de Janeiro.'},
+    {'numero': '04', 'titulo': 'Grande Sertão: Veredas', 'autor': 'Guimarães Rosa', 'ano': 1956,
+     'categoria': '800 – Literatura', 'capa': 'acervo/covers/cover-04.svg',
+     'resumo': 'Linguagem inventiva e épica na jornada de Riobaldo.'},
+    {'numero': '05', 'titulo': 'Capitães da Areia', 'autor': 'Jorge Amado', 'ano': 1937,
+     'categoria': '800 – Literatura', 'capa': 'acervo/covers/cover-05.svg',
+     'resumo': 'Juventude, liberdade e resistência nas ruas de Salvador.'},
+    {'numero': '06', 'titulo': 'Iracema', 'autor': 'José de Alencar', 'ano': 1865,
+     'categoria': '800 – Literatura', 'capa': 'acervo/covers/cover-06.svg',
+     'resumo': 'Poema em prosa que marca o romantismo brasileiro.'},
+    {'numero': '07', 'titulo': 'O Quinze', 'autor': 'Rachel de Queiroz', 'ano': 1930,
+     'categoria': '800 – Literatura', 'capa': 'acervo/covers/cover-07.svg',
+     'resumo': 'Marco do romance social brasileiro sobre a seca de 1915.'},
+    {'numero': '08', 'titulo': 'Sentimento do Mundo', 'autor': 'Carlos Drummond', 'ano': 1940,
+     'categoria': '800 – Poesia', 'capa': 'acervo/covers/cover-08.svg',
+     'resumo': 'Versos essenciais sobre empatia, tempo e vida coletiva.'},
+    {'numero': '09', 'titulo': 'Policarpo Quaresma', 'autor': 'Lima Barreto', 'ano': 1911,
+     'categoria': '300 – Clássicos', 'capa': 'acervo/covers/cover-09.svg',
+     'resumo': 'Sátira afiada sobre idealismo e burocracia na Primeira República.'},
+    {'numero': '10', 'titulo': 'Romanceiro da Inconfidência', 'autor': 'Cecília Meireles', 'ano': 1953,
+     'categoria': '900 – História', 'capa': 'acervo/covers/cover-10.svg',
+     'resumo': 'Lirismo histórico sobre Vila Rica e os inconfidentes.'},
+    {'numero': '11', 'titulo': 'Cosmos', 'autor': 'Carl Sagan', 'ano': 1980,
+     'categoria': '500 – Ciências', 'capa': 'acervo/covers/cover-11.svg',
+     'resumo': 'Uma viagem inspiradora pela ciência, astronomia e humanidade.'},
+    {'numero': '12', 'titulo': 'Sapiens', 'autor': 'Yuval N. Harari', 'ano': 2011,
+     'categoria': '900 – História', 'capa': 'acervo/covers/cover-12.svg',
+     'resumo': 'Da revolução cognitiva à era da informação em perspectiva.'},
+    {'numero': '13', 'titulo': 'Python Fluente', 'autor': 'Luciano Ramalho', 'ano': 2015,
+     'categoria': '600 – Tecnologia', 'capa': 'acervo/covers/cover-13.svg',
+     'resumo': 'Boas práticas e programação idiomática em Python moderno.'},
+    {'numero': '14', 'titulo': 'Pedagogia da Autonomia', 'autor': 'Paulo Freire', 'ano': 1996,
+     'categoria': '300 – Educação', 'capa': 'acervo/covers/cover-14.svg',
+     'resumo': 'Saberes fundamentais para uma prática educativa libertadora.'},
+    {'numero': '15', 'titulo': 'Sistemas Operacionais', 'autor': 'A. Tanenbaum', 'ano': 2015,
+     'categoria': '600 – Tecnologia', 'capa': 'acervo/covers/cover-15.svg',
+     'resumo': 'Arquitetura, processos e fundamentos da computação moderna.'},
+    {'numero': '16', 'titulo': 'Reinações de Narizinho', 'autor': 'Monteiro Lobato', 'ano': 1931,
+     'categoria': '800 – Infantil', 'capa': 'acervo/covers/cover-16.svg',
+     'resumo': 'Imaginação e folclore no universo do Sítio do Picapau Amarelo.'},
+]
+
+
 def home(request):
-    return render(request, 'acervo/home.html', {'funcionalidades': FUNCIONALIDADES})
+    return render(
+        request,
+        'acervo/home.html',
+        {
+            'funcionalidades': FUNCIONALIDADES,
+            'livros_vitrine': LIVROS_VITRINE,
+        },
+    )
 
 
 @perfil_requerido

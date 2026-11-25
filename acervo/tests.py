@@ -169,6 +169,13 @@ class PerfisEPermissoesTest(BaseMultiTenantMixin, TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertIn('/login/', resp.url)
 
+    def test_landing_page_publica_carrega_com_capas_e_vitrine(self):
+        resp = self.client.get(reverse('home'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'SUA VEZ')
+        self.assertContains(resp, 'cover-01.svg')
+        self.assertContains(resp, 'Dom Casmurro')
+
     def test_usuario_sem_perfil_nao_gera_erro_500(self):
         super_sem_perfil = User.objects.create_superuser('root', 'root@sys.com', 'senha1234')
         self.client.force_login(super_sem_perfil)

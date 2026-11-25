@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 320" width="240" height="320">
+  <defs>
+    <linearGradient id="spine10" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.36"/>
+      <stop offset="8%" stop-color="#000000" stop-opacity="0.06"/>
+      <stop offset="14%" stop-color="#FFFFFF" stop-opacity="0.14"/>
+      <stop offset="20%" stop-color="#000000" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="320" rx="10" fill="#581C87"/>
+  <rect width="240" height="320" rx="10" fill="url(#spine10)"/>
+  <rect x="18" y="16" width="204" height="288" rx="6" fill="none" stroke="#F0ABFC" stroke-opacity="0.35" stroke-width="1.2"/>
+  <text x="128" y="34" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" letter-spacing="1.5" fill="#F0ABFC">900 · HISTÓRIA</text>
+  <text x="128" y="60" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="20" fill="#FAF5FF">Romanceiro</text>
+  
+        <path d="M55 245 V145 A65 65 0 0 1 185 145 V245 Z" fill="#F0ABFC" opacity="0.22"/>
+        <path d="M78 245 V150 A42 42 0 0 1 162 150 V245 Z" fill="none" stroke="#F0ABFC" stroke-width="2.5"/>
+        <circle cx="120" cy="130" r="14" fill="#F0ABFC"/>
+  <line x1="56" y1="258" x2="196" y2="258" stroke="#F0ABFC" stroke-opacity="0.45" stroke-width="1"/>
+  <text x="128" y="278" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="600" fill="#FAF5FF" opacity="0.9">Cecília Meireles</text>
+  <text x="128" y="295" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" letter-spacing="1.8" fill="#F0ABFC" opacity="0.8">SUA VEZ DE LER</text>
+</svg>
