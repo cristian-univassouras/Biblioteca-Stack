@@ -1,0 +1,136 @@
+{% extends 'acervo/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard — {{ organizacao.nome }}{% endblock %}
+
+{% block conteudo %}
+
+<div class="dashboard-topo">
+    <div>
+        <h1>Dashboard — {{ organizacao.nome }}</h1>
+    </div>
+    {% if pode_exportar %}
+        <div class="botoes-exportacao">
+            <a class="botao-exportar" href="{% url 'exportar_csv' %}?inicio={{ request.GET.inicio|default:''|urlencode }}&fim={{ request.GET.fim|default:''|urlencode }}">
+                Exportar CSV
+            </a>
+            <a class="botao-exportar botao-exportar-pdf" href="{% url 'exportar_pdf' %}?inicio={{ request.GET.inicio|default:''|urlencode }}&fim={{ request.GET.fim|default:''|urlencode }}">
+                Exportar PDF
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<form method="get" class="busca filtro-periodo">
+    <label for="{{ form_periodo.inicio.id_for_label }}">Início:</label>
+    {{ form_periodo.inicio }}
+
+    <label for="{{ form_periodo.fim.id_for_label }}">Fim:</label>
+    {{ form_periodo.fim }}
+
+    <button type="submit">Filtrar</button>
+    <a class="link-limpar" href="{% url 'dashboard' %}">Limpar</a>
+</form>
+
+<div class="kpis-grid">
+    <div class="kpi-card">
+        <small>Empréstimos no período</small>
+        <strong>{{ kpis.total }}</strong>
+    </div>
+    <div class="kpi-card">
+        <small>Em aberto</small>
+        <strong>{{ kpis.abertos }}</strong>
+    </div>
+    <div class="kpi-card kpi-alerta">
+        <small>Em atraso</small>
+        <strong>{{ kpis.atrasados }}</strong>
+    </div>
+    <div class="kpi-card">
+        <small>Membros ativos</small>
+        <strong>{{ kpis.leitores }}</strong>
+    </div>
+    <div class="kpi-card">
+        <small>Exemplares disponíveis</small>
+        <strong>{{ kpis.disponiveis }} / {{ kpis.total_exemplares }}</strong>
+    </div>
+    <div class="kpi-card">
+        <small>Reservas aguardando</small>
+        <strong>{{ kpis.reservas_aguardando }}</strong>
+    </div>
+</div>
+
+<div class="charts-grid">
+    {% if mostra_series %}
+        <section class="chart-card chart-card-largo">
+            <h2>Empréstimos por mês (Série Temporal)</h2>
+            {% if por_mes %}
+                <div class="chart-wrapper">
+                    <canvas id="grafico-mes"></canvas>
+                </div>
+            {% else %}
+                <p class="sem-dados">Sem empréstimos registrados no período selecionado.</p>
+            {% endif %}
+        </section>
+    {% endif %}
+
+    <section class="chart-card">
+        <h2>Top 5 livros mais emprestados (Ranking)</h2>
+        {% if ranking %}
+            <div class="chart-wrapper">
+                <canvas id="grafico-ranking"></canvas>
+            </div>
+            <table class="tabela-ranking">
+                <thead>
+                    <tr>
+                        <th>Livro</th>
+                        <th>Empréstimos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in ranking %}
+                        <tr>
+                            <td>{{ item.titulo }}</td>
+                            <td>{{ item.total }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="sem-dados">Sem dados de ranking no período.</p>
+        {% endif %}
+    </section>
+
+    <section class="chart-card">
+        <h2>Empréstimos por categoria Dewey</h2>
+        {% if por_categoria %}
+            <div class="chart-wrapper">
+                <canvas id="grafico-categoria"></canvas>
+            </div>
+        {% else %}
+            <p class="sem-dados">Sem dados por categoria no período.</p>
+        {% endif %}
+    </section>
+
+    <section class="chart-card">
+        <h2>Exemplares por estado atual</h2>
+        {% if exemplares_por_estado %}
+            <div class="chart-wrapper">
+                <canvas id="grafico-estados"></canvas>
+            </div>
+        {% else %}
+            <p class="sem-dados">Nenhum exemplar cadastrado nesta organização.</p>
+        {% endif %}
+    </section>
+</div>
+
+{{ por_mes|json_script:"dados-mes" }}
+{{ ranking|json_script:"dados-ranking" }}
+{{ por_categoria|json_script:"dados-categoria" }}
+{{ exemplares_por_estado|json_script:"dados-estados" }}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="{% static 'acervo/js/dashboard.js' %}"></script>
+{% endblock %}

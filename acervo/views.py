@@ -1,27 +1,41 @@
 from datetime import date, timedelta
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Q
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import ProtectedError, Q
+from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Livro, Autor, Exemplar, Membro, Emprestimo, Reserva
-from .forms import (
-    LivroForm, AutorForm, ExemplarForm, MembroForm, EmprestimoForm, ReservaForm
+from core.permissions import org_atual, papel_requerido, perfil_requerido
+
+from .dashboard import (
+    base_emprestimos_filtrada,
+    calcular_metricas_dashboard,
+    gerar_resposta_csv,
+    gerar_resposta_pdf,
 )
-
+from .forms import (
+    AutorForm,
+    EmprestimoForm,
+    ExemplarForm,
+    LivroForm,
+    MembroForm,
+    ReservaForm,
+)
+from .models import Autor, Emprestimo, Exemplar, Livro, Membro, Reserva
 
 FUNCIONALIDADES = [
-    {'icone': '📖', 'titulo': 'Acervo de livros',
-     'texto': 'Cadastro de livros por título, autor, ano e categoria (classificação Dewey).'},
-    {'icone': '🔍', 'titulo': 'Busca e filtro',
-     'texto': 'Busque por título ou autor e filtre por tipo de acervo e categoria, juntos ou separados.'},
-    {'icone': '🏷️', 'titulo': 'Controle de exemplares',
-     'texto': 'Cada exemplar físico ou digital tem código de patrimônio e estado (disponível, emprestado, manutenção).'},
-    {'icone': '🤝', 'titulo': 'Empréstimos',
-     'texto': 'Registro de empréstimos com prazo de devolução e cálculo automático de dias de atraso e multa.'},
-    {'icone': '⏳', 'titulo': 'Fila de reservas',
-     'texto': 'Membros podem reservar livros emprestados; a próxima reserva é atendida automaticamente na devolução.'},
-    {'icone': '✅', 'titulo': 'Validação de dados',
-     'texto': 'Regras de negócio aplicadas nos formulários, como impedir ano de publicação futuro.'},
+    {'icone': '🏢', 'titulo': 'Multi-organização',
+     'texto': 'Várias bibliotecas na mesma base com isolamento total de dados por organização.'},
+    {'icone': '🔐', 'titulo': 'Perfis e permissões',
+     'texto': 'Controle de acesso para Administradores e Operadores em todas as telas e API.'},
+    {'icone': '📊', 'titulo': 'Dashboard e relatórios',
+     'texto': 'KPIs, rankings, séries temporais, gráficos e exportação em CSV e PDF.'},
+    {'icone': '🔌', 'titulo': 'API REST com DRF',
+     'texto': 'Endpoints em JSON com serializers, validações e autenticação integrada.'},
+    {'icone': '🤝', 'titulo': 'Empréstimos e reservas',
+     'texto': 'Prazo de devolução, cálculo automático de multa e fila automática de reservas.'},
+    {'icone': '🐳', 'titulo': 'Docker + PostgreSQL',
+     'texto': 'Ambiente containerizado pronto para subir aplicação e banco de dados.'},
 ]
 
 
@@ -29,8 +43,45 @@ def home(request):
     return render(request, 'acervo/home.html', {'funcionalidades': FUNCIONALIDADES})
 
 
+@perfil_requerido
+def dashboard(request):
+    org = org_atual(request)
+    base, periodo_form = base_emprestimos_filtrada(request, org)
+    eh_admin = request.user.perfil.eh_admin
+    metricas = calcular_metricas_dashboard(base, org, incluir_series=eh_admin)
+
+    contexto = {
+        'organizacao': org,
+        'form_periodo': periodo_form,
+        'mostra_series': eh_admin,
+        'pode_exportar': eh_admin,
+        'kpis': metricas['kpis'],
+        'ranking': metricas['ranking'],
+        'por_mes': metricas['por_mes'],
+        'por_categoria': metricas['por_categoria'],
+        'exemplares_por_estado': metricas['exemplares_por_estado'],
+    }
+    return render(request, 'acervo/dashboard.html', contexto)
+
+
+@papel_requerido('admin')
+def exportar_csv(request):
+    org = org_atual(request)
+    base, _ = base_emprestimos_filtrada(request, org)
+    return gerar_resposta_csv(base)
+
+
+@papel_requerido('admin')
+def exportar_pdf(request):
+    org = org_atual(request)
+    base, periodo_form = base_emprestimos_filtrada(request, org)
+    return gerar_resposta_pdf(base, org, periodo_form, request.user)
+
+
+@perfil_requerido
 def lista_livros(request):
-    livros = Livro.objects.select_related('autor').all()
+    org = org_atual(request)
+    livros = Livro.objects.select_related('autor').filter(organizacao=org)
 
     nome = request.GET.get('nome', '')
     tipo = request.GET.get('tipo', '')
@@ -47,7 +98,8 @@ def lista_livros(request):
     livros = livros.filter(condicao)
 
     return render(
-        request, 'acervo/lista.html',
+        request,
+        'acervo/lista.html',
         {
             'livros': livros,
             'tipos': Livro.TIPO_ACERVO_CHOICES,
@@ -55,43 +107,59 @@ def lista_livros(request):
             'filtro_nome': nome,
             'filtro_tipo': tipo,
             'filtro_categoria': categoria,
-        }
+        },
     )
 
 
+@perfil_requerido
 def novo_livro(request):
+    org = org_atual(request)
     if request.method == 'POST':
-        form = LivroForm(request.POST)
+        form = LivroForm(request.POST, org=org)
         if form.is_valid():
-            form.save()
+            livro = form.save(commit=False)
+            livro.organizacao = org
+            livro.save()
+            messages.success(request, 'Livro cadastrado com sucesso.')
             return redirect('lista')
     else:
-        form = LivroForm()
-    return render(request, 'acervo/form.html', {'form': form})
+        form = LivroForm(org=org)
+    return render(request, 'acervo/form.html', {'form': form, 'titulo_pagina': 'Novo livro'})
 
 
+@perfil_requerido
 def editar_livro(request, pk):
-    livro = get_object_or_404(Livro, pk=pk)
+    org = org_atual(request)
+    livro = get_object_or_404(Livro, pk=pk, organizacao=org)
     if request.method == 'POST':
-        form = LivroForm(request.POST, instance=livro)
+        form = LivroForm(request.POST, instance=livro, org=org)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Livro atualizado com sucesso.')
             return redirect('lista')
     else:
-        form = LivroForm(instance=livro)
-    return render(request, 'acervo/form.html', {'form': form})
+        form = LivroForm(instance=livro, org=org)
+    return render(request, 'acervo/form.html', {'form': form, 'titulo_pagina': 'Editar livro'})
 
 
+@papel_requerido('admin')
 def apagar_livro(request, pk):
-    livro = get_object_or_404(Livro, pk=pk)
+    org = org_atual(request)
+    livro = get_object_or_404(Livro, pk=pk, organizacao=org)
     if request.method == 'POST':
-        livro.delete()
+        try:
+            livro.delete()
+            messages.success(request, 'Livro removido com sucesso.')
+        except ProtectedError:
+            messages.error(request, 'Não é possível remover este livro porque há registros vinculados.')
         return redirect('lista')
-    return render(request, 'acervo/confirmar_exclusao.html', {'objeto': livro})
+    return render(request, 'acervo/confirmar_exclusao.html', {'objeto': livro, 'voltar_url': 'lista'})
 
 
+@perfil_requerido
 def lista_autores(request):
-    autores = Autor.objects.all()
+    org = org_atual(request)
+    autores = Autor.objects.filter(organizacao=org)
 
     nome = request.GET.get('nome', '')
     if nome:
@@ -100,39 +168,55 @@ def lista_autores(request):
     return render(request, 'acervo/autores.html', {'autores': autores, 'filtro_nome': nome})
 
 
+@perfil_requerido
 def novo_autor(request):
+    org = org_atual(request)
     if request.method == 'POST':
         form = AutorForm(request.POST)
         if form.is_valid():
-            form.save()
+            autor = form.save(commit=False)
+            autor.organizacao = org
+            autor.save()
+            messages.success(request, 'Autor cadastrado com sucesso.')
             return redirect('lista_autores')
     else:
         form = AutorForm()
-    return render(request, 'acervo/form.html', {'form': form})
+    return render(request, 'acervo/form.html', {'form': form, 'titulo_pagina': 'Novo autor'})
 
 
+@perfil_requerido
 def editar_autor(request, pk):
-    autor = get_object_or_404(Autor, pk=pk)
+    org = org_atual(request)
+    autor = get_object_or_404(Autor, pk=pk, organizacao=org)
     if request.method == 'POST':
         form = AutorForm(request.POST, instance=autor)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Autor atualizado com sucesso.')
             return redirect('lista_autores')
     else:
         form = AutorForm(instance=autor)
-    return render(request, 'acervo/form.html', {'form': form})
+    return render(request, 'acervo/form.html', {'form': form, 'titulo_pagina': 'Editar autor'})
 
 
+@papel_requerido('admin')
 def apagar_autor(request, pk):
-    autor = get_object_or_404(Autor, pk=pk)
+    org = org_atual(request)
+    autor = get_object_or_404(Autor, pk=pk, organizacao=org)
     if request.method == 'POST':
-        autor.delete()
+        try:
+            autor.delete()
+            messages.success(request, 'Autor removido com sucesso.')
+        except ProtectedError:
+            messages.error(request, 'Não é possível remover este autor porque existem livros vinculados a ele.')
         return redirect('lista_autores')
-    return render(request, 'acervo/confirmar_exclusao.html', {'objeto': autor})
+    return render(request, 'acervo/confirmar_exclusao.html', {'objeto': autor, 'voltar_url': 'lista_autores'})
 
 
+@perfil_requerido
 def lista_exemplares(request):
-    exemplares = Exemplar.objects.select_related('livro').all()
+    org = org_atual(request)
+    exemplares = Exemplar.objects.select_related('livro').filter(organizacao=org)
 
     nome = request.GET.get('nome', '')
     estado = request.GET.get('estado', '')
@@ -146,49 +230,66 @@ def lista_exemplares(request):
     exemplares = exemplares.filter(condicao)
 
     return render(
-        request, 'acervo/exemplares.html',
+        request,
+        'acervo/exemplares.html',
         {
             'exemplares': exemplares,
             'estados': Exemplar.ESTADO_CHOICES,
             'filtro_nome': nome,
             'filtro_estado': estado,
-        }
+        },
     )
 
 
+@perfil_requerido
 def novo_exemplar(request):
+    org = org_atual(request)
     if request.method == 'POST':
-        form = ExemplarForm(request.POST)
+        form = ExemplarForm(request.POST, org=org)
         if form.is_valid():
-            form.save()
+            exemplar = form.save(commit=False)
+            exemplar.organizacao = org
+            exemplar.save()
+            messages.success(request, 'Exemplar cadastrado com sucesso.')
             return redirect('lista_exemplares')
     else:
-        form = ExemplarForm()
-    return render(request, 'acervo/form.html', {'form': form})
+        form = ExemplarForm(org=org)
+    return render(request, 'acervo/form.html', {'form': form, 'titulo_pagina': 'Novo exemplar'})
 
 
+@perfil_requerido
 def editar_exemplar(request, pk):
-    exemplar = get_object_or_404(Exemplar, pk=pk)
+    org = org_atual(request)
+    exemplar = get_object_or_404(Exemplar, pk=pk, organizacao=org)
     if request.method == 'POST':
-        form = ExemplarForm(request.POST, instance=exemplar)
+        form = ExemplarForm(request.POST, instance=exemplar, org=org)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Exemplar atualizado com sucesso.')
             return redirect('lista_exemplares')
     else:
-        form = ExemplarForm(instance=exemplar)
-    return render(request, 'acervo/form.html', {'form': form})
+        form = ExemplarForm(instance=exemplar, org=org)
+    return render(request, 'acervo/form.html', {'form': form, 'titulo_pagina': 'Editar exemplar'})
 
 
+@papel_requerido('admin')
 def apagar_exemplar(request, pk):
-    exemplar = get_object_or_404(Exemplar, pk=pk)
+    org = org_atual(request)
+    exemplar = get_object_or_404(Exemplar, pk=pk, organizacao=org)
     if request.method == 'POST':
-        exemplar.delete()
+        try:
+            exemplar.delete()
+            messages.success(request, 'Exemplar removido com sucesso.')
+        except ProtectedError:
+            messages.error(request, 'Não é possível remover este exemplar porque existem empréstimos vinculados.')
         return redirect('lista_exemplares')
-    return render(request, 'acervo/confirmar_exclusao.html', {'objeto': exemplar})
+    return render(request, 'acervo/confirmar_exclusao.html', {'objeto': exemplar, 'voltar_url': 'lista_exemplares'})
 
 
+@perfil_requerido
 def lista_membros(request):
-    membros = Membro.objects.all()
+    org = org_atual(request)
+    membros = Membro.objects.filter(organizacao=org)
 
     nome = request.GET.get('nome', '')
     if nome:
@@ -197,39 +298,55 @@ def lista_membros(request):
     return render(request, 'acervo/membros.html', {'membros': membros, 'filtro_nome': nome})
 
 
+@perfil_requerido
 def novo_membro(request):
+    org = org_atual(request)
     if request.method == 'POST':
-        form = MembroForm(request.POST)
+        form = MembroForm(request.POST, org=org)
         if form.is_valid():
-            form.save()
+            membro = form.save(commit=False)
+            membro.organizacao = org
+            membro.save()
+            messages.success(request, 'Membro cadastrado com sucesso.')
             return redirect('lista_membros')
     else:
-        form = MembroForm()
-    return render(request, 'acervo/form.html', {'form': form})
+        form = MembroForm(org=org)
+    return render(request, 'acervo/form.html', {'form': form, 'titulo_pagina': 'Novo membro'})
 
 
+@perfil_requerido
 def editar_membro(request, pk):
-    membro = get_object_or_404(Membro, pk=pk)
+    org = org_atual(request)
+    membro = get_object_or_404(Membro, pk=pk, organizacao=org)
     if request.method == 'POST':
-        form = MembroForm(request.POST, instance=membro)
+        form = MembroForm(request.POST, instance=membro, org=org)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Membro atualizado com sucesso.')
             return redirect('lista_membros')
     else:
-        form = MembroForm(instance=membro)
-    return render(request, 'acervo/form.html', {'form': form})
+        form = MembroForm(instance=membro, org=org)
+    return render(request, 'acervo/form.html', {'form': form, 'titulo_pagina': 'Editar membro'})
 
 
+@papel_requerido('admin')
 def apagar_membro(request, pk):
-    membro = get_object_or_404(Membro, pk=pk)
+    org = org_atual(request)
+    membro = get_object_or_404(Membro, pk=pk, organizacao=org)
     if request.method == 'POST':
-        membro.delete()
+        try:
+            membro.delete()
+            messages.success(request, 'Membro removido com sucesso.')
+        except ProtectedError:
+            messages.error(request, 'Não é possível remover este membro porque existem empréstimos vinculados.')
         return redirect('lista_membros')
-    return render(request, 'acervo/confirmar_exclusao.html', {'objeto': membro})
+    return render(request, 'acervo/confirmar_exclusao.html', {'objeto': membro, 'voltar_url': 'lista_membros'})
 
 
+@perfil_requerido
 def lista_emprestimos(request):
-    emprestimos = Emprestimo.objects.select_related('exemplar__livro', 'membro').all()
+    org = org_atual(request)
+    emprestimos = Emprestimo.objects.select_related('exemplar__livro', 'membro').filter(organizacao=org)
 
     nome = request.GET.get('nome', '')
     situacao = request.GET.get('situacao', '')
@@ -245,44 +362,69 @@ def lista_emprestimos(request):
     emprestimos = emprestimos.filter(condicao)
 
     return render(
-        request, 'acervo/emprestimos.html',
-        {'emprestimos': emprestimos, 'filtro_nome': nome, 'filtro_situacao': situacao}
+        request,
+        'acervo/emprestimos.html',
+        {'emprestimos': emprestimos, 'filtro_nome': nome, 'filtro_situacao': situacao},
     )
 
 
+@perfil_requerido
 def novo_emprestimo(request):
+    org = org_atual(request)
     if request.method == 'POST':
-        form = EmprestimoForm(request.POST)
+        form = EmprestimoForm(request.POST, org=org)
         if form.is_valid():
-            emprestimo = form.save()
-            emprestimo.exemplar.estado = 'emprestado'
-            emprestimo.exemplar.save()
+            with transaction.atomic():
+                emprestimo = form.save(commit=False)
+                emprestimo.organizacao = org
+                emprestimo.save()
+                emprestimo.exemplar.estado = 'emprestado'
+                emprestimo.exemplar.save(update_fields=['estado'])
+            messages.success(request, 'Empréstimo registrado com sucesso.')
             return redirect('lista_emprestimos')
     else:
-        form = EmprestimoForm(initial={'data_prevista_devolucao': date.today() + timedelta(days=14)})
-    return render(request, 'acervo/form.html', {'form': form})
+        form = EmprestimoForm(
+            initial={'data_prevista_devolucao': date.today() + timedelta(days=14)},
+            org=org,
+        )
+    return render(request, 'acervo/form.html', {'form': form, 'titulo_pagina': 'Novo empréstimo'})
 
 
+@perfil_requerido
 def devolver_emprestimo(request, pk):
-    emprestimo = get_object_or_404(Emprestimo, pk=pk)
+    org = org_atual(request)
+    emprestimo = get_object_or_404(Emprestimo, pk=pk, organizacao=org)
     if request.method == 'POST':
-        emprestimo.data_devolucao = date.today()
-        emprestimo.save()
+        if emprestimo.data_devolucao is not None:
+            messages.warning(request, 'Este empréstimo já foi devolvido.')
+            return redirect('lista_emprestimos')
 
-        exemplar = emprestimo.exemplar
-        exemplar.estado = 'disponivel'
-        exemplar.save()
+        with transaction.atomic():
+            emprestimo.data_devolucao = date.today()
+            emprestimo.save(update_fields=['data_devolucao'])
 
-        proxima_reserva = Reserva.objects.filter(livro=exemplar.livro, atendida=False).first()
-        if proxima_reserva:
-            proxima_reserva.atendida = True
-            proxima_reserva.save()
+            exemplar = emprestimo.exemplar
+            exemplar.estado = 'disponivel'
+            exemplar.save(update_fields=['estado'])
+
+            proxima_reserva = Reserva.objects.filter(
+                organizacao=org,
+                livro=exemplar.livro,
+                atendida=False,
+            ).first()
+            if proxima_reserva:
+                proxima_reserva.atendida = True
+                proxima_reserva.save(update_fields=['atendida'])
+
+        messages.success(request, 'Devolução registrada com sucesso.')
 
     return redirect('lista_emprestimos')
 
 
+@perfil_requerido
 def lista_reservas(request):
-    reservas = Reserva.objects.select_related('livro', 'membro').all()
+    org = org_atual(request)
+    reservas = Reserva.objects.select_related('livro', 'membro').filter(organizacao=org)
 
     nome = request.GET.get('nome', '')
     situacao = request.GET.get('situacao', '')
@@ -298,25 +440,38 @@ def lista_reservas(request):
     reservas = reservas.filter(condicao)
 
     return render(
-        request, 'acervo/reservas.html',
-        {'reservas': reservas, 'filtro_nome': nome, 'filtro_situacao': situacao}
+        request,
+        'acervo/reservas.html',
+        {'reservas': reservas, 'filtro_nome': nome, 'filtro_situacao': situacao},
     )
 
 
+@perfil_requerido
 def nova_reserva(request):
+    org = org_atual(request)
     if request.method == 'POST':
-        form = ReservaForm(request.POST)
+        form = ReservaForm(request.POST, org=org)
         if form.is_valid():
-            form.save()
+            reserva = form.save(commit=False)
+            reserva.organizacao = org
+            reserva.save()
+            messages.success(request, 'Reserva registrada com sucesso.')
             return redirect('lista_reservas')
     else:
-        form = ReservaForm()
-    return render(request, 'acervo/form.html', {'form': form})
+        form = ReservaForm(org=org)
+    return render(request, 'acervo/form.html', {'form': form, 'titulo_pagina': 'Nova reserva'})
 
 
+@perfil_requerido
 def cancelar_reserva(request, pk):
-    reserva = get_object_or_404(Reserva, pk=pk)
+    org = org_atual(request)
+    reserva = get_object_or_404(Reserva, pk=pk, organizacao=org)
     if request.method == 'POST':
         reserva.delete()
+        messages.success(request, 'Reserva cancelada com sucesso.')
         return redirect('lista_reservas')
-    return render(request, 'acervo/confirmar_exclusao.html', {'objeto': reserva})
+    return render(
+        request,
+        'acervo/confirmar_exclusao.html',
+        {'objeto': reserva, 'voltar_url': 'lista_reservas'},
+    )
