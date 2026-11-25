@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Sua Vez de Ler</title>
+    <link rel="stylesheet" href="{% static 'acervo/style.css' %}">
+</head>
+<body class="pagina-login">
+    <div class="login-container">
+        <h1>📚 Sua Vez de Ler</h1>
+        <p class="login-subtitulo">Acesse sua organização</p>
+
+        {% if form.errors %}
+            <div class="mensagem mensagem-error">
+                Usuário ou senha inválidos. Tente novamente.
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Entrar</button>
+        </form>
+
+        <p class="login-voltar">
+            <a href="{% url 'home' %}">← Voltar para a página inicial</a>
+        </p>
+    </div>
+</body>
+</html>

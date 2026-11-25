@@ -2,11 +2,14 @@
 
 {% block conteudo %}
 
+{% if titulo_pagina %}
+    <h1>{{ titulo_pagina }}</h1>
+{% endif %}
+
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button>Salvar</button>
+    <button type="submit">Salvar</button>
 </form>
-
 
 {% endblock %}

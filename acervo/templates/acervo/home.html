@@ -1,6 +1,9 @@
 {% load static %}
-<html>
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sua Vez de Ler</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,10 +15,12 @@
     <section class="hero">
         <h1>📚 Sua Vez de Ler</h1>
         <p>
-            Sistema de gestão de biblioteca: controle o acervo de livros, exemplares,
-            membros, empréstimos e reservas em um só lugar.
+            Sistema multi-organização de gestão de biblioteca: acervo, exemplares,
+            membros, empréstimos, reservas, dashboard analítico e API REST.
         </p>
-        <a class="botao-entrar" href="{% url 'lista' %}">Entrar</a>
+        <a class="botao-entrar" href="{% url 'dashboard' %}">
+            {% if user.is_authenticated %}Acessar Sistema{% else %}Entrar{% endif %}
+        </a>
     </section>
 
     <section class="funcionalidades">

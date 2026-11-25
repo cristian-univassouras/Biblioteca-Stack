@@ -1,0 +1,12 @@
+{% extends 'acervo/base.html' %}
+
+{% block conteudo %}
+<div class="caixa-confirmacao">
+    <h1>Perfil não configurado</h1>
+    <p>
+        Sua conta ainda não está vinculada a nenhuma organização.
+        Solicite ao administrador do sistema a criação do seu perfil.
+    </p>
+    <a class="link-cancelar" href="{% url 'home' %}">Voltar ao início</a>
+</div>
+{% endblock %}

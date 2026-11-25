@@ -1,14 +1,24 @@
-<html>
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-    {% load static %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sua Vez de Ler — Biblioteca SaaS{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'acervo/style.css' %}">
-
 </head>
 <body>
     <div class="layout">
         <aside class="sidebar">
-            <div class="sidebar-titulo">Biblioteca</div>
+            <div class="sidebar-titulo">Biblioteca SaaS</div>
+            {% if user.is_authenticated and user.perfil %}
+                <div class="sidebar-org">
+                    <strong>{{ user.perfil.organizacao.nome }}</strong>
+                    <span>{{ user.username }} · {{ user.perfil.get_papel_display }}</span>
+                </div>
+            {% endif %}
             <nav>
+                <a href="{% url 'dashboard' %}">Dashboard</a>
                 <a href="{% url 'lista' %}">Livros</a>
                 <a href="{% url 'lista_autores' %}">Autores</a>
                 <a href="{% url 'lista_exemplares' %}">Exemplares</a>
@@ -16,16 +26,29 @@
                 <a href="{% url 'lista_emprestimos' %}">Empréstimos</a>
                 <a href="{% url 'lista_reservas' %}">Reservas</a>
             </nav>
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'logout' %}" class="sidebar-logout">
+                    {% csrf_token %}
+                    <button type="submit">Sair</button>
+                </form>
+            {% endif %}
         </aside>
 
         <div class="area-principal">
             <main>
+                {% if messages %}
+                    <div class="mensagens">
+                        {% for message in messages %}
+                            <div class="mensagem mensagem-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
                 {% block conteudo %}
                 {% endblock %}
             </main>
-            <footer>Sua Vez de Ler - Todos os direitos reservados © 2026 </footer>
+            <footer>Sua Vez de Ler - Todos os direitos reservados © 2026</footer>
         </div>
     </div>
+    {% block scripts %}{% endblock %}
 </body>
-
 </html>

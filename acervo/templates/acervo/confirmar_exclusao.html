@@ -4,11 +4,16 @@
 
 <h1>Confirmar exclusão</h1>
 
-<p>Tem certeza que deseja apagar "{{ objeto }}"?</p>
+<div class="caixa-confirmacao">
+    <p>Tem certeza que deseja apagar "<strong>{{ objeto }}</strong>"?</p>
 
-<form method="post">
-    {% csrf_token %}
-    <button type="submit">Sim, apagar</button>
-</form>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Sim, apagar</button>
+    </form>
+    {% if voltar_url %}
+        <a class="link-cancelar" href="{% url voltar_url %}">Cancelar</a>
+    {% endif %}
+</div>
 
 {% endblock %}

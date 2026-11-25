@@ -29,7 +29,9 @@
             </div>
             <div class="card-acoes">
                 <a href="{% url 'editar_exemplar' exemplar.pk %}">Editar</a>
-                <a href="{% url 'apagar_exemplar' exemplar.pk %}">Apagar</a>
+                {% if user.perfil.eh_admin %}
+                    <a href="{% url 'apagar_exemplar' exemplar.pk %}">Apagar</a>
+                {% endif %}
             </div>
         </li>
     {% empty %}

@@ -39,7 +39,9 @@
             </div>
             <div class="card-acoes">
                 <a href="{% url 'editar_livro' livro.pk %}">Editar</a>
-                <a href="{% url 'apagar_livro' livro.pk %}">Apagar</a>
+                {% if user.perfil.eh_admin %}
+                    <a href="{% url 'apagar_livro' livro.pk %}">Apagar</a>
+                {% endif %}
             </div>
         </li>
     {% empty %}
